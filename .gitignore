@@ -1,0 +1,8 @@
+bin/
+data/
+.cache/
+logs/
+*.log
+*.tmp
+.DS_Store
+.vscode/
