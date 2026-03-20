@@ -17,6 +17,8 @@ import (
 
 type Status string
 
+const LastJobAlias = "LAST"
+
 const (
 	StatusQueued    Status = "queued"
 	StatusRunning   Status = "running"
@@ -163,6 +165,13 @@ func (m *Manager) CreateJob(command string, args []string, workdir string) (*Job
 func (m *Manager) Get(id string) (*Job, error) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
+	if strings.EqualFold(id, LastJobAlias) {
+		job, err := m.latestJobLocked()
+		if err != nil {
+			return nil, err
+		}
+		return m.copyJob(job), nil
+	}
 	job, ok := m.jobs[id]
 	if !ok {
 		return nil, os.ErrNotExist
@@ -181,12 +190,37 @@ func (m *Manager) copyJob(job *Job) *Job {
 
 func (m *Manager) Tail(id string) ([]string, error) {
 	m.mu.RLock()
-	job, ok := m.jobs[id]
+	var (
+		job *Job
+		ok  bool
+		err error
+	)
+	if strings.EqualFold(id, LastJobAlias) {
+		job, err = m.latestJobLocked()
+	} else {
+		job, ok = m.jobs[id]
+		if !ok {
+			err = os.ErrNotExist
+		}
+	}
 	m.mu.RUnlock()
-	if !ok {
-		return nil, os.ErrNotExist
+	if err != nil {
+		return nil, err
 	}
 	return tailFile(job.OutputPath, m.tailLines)
+}
+
+func (m *Manager) latestJobLocked() (*Job, error) {
+	var latest *Job
+	for _, job := range m.jobs {
+		if latest == nil || job.CreatedAt.After(latest.CreatedAt) {
+			latest = job
+		}
+	}
+	if latest == nil {
+		return nil, os.ErrNotExist
+	}
+	return latest, nil
 }
 
 func (m *Manager) run(job *Job) {

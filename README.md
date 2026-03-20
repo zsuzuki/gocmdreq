@@ -1,6 +1,6 @@
 # gocmdreq
 
-遠隔でコマンドラインを実行する簡易ツールです。サーバーが実行ジョブを受け付けてバックグラウンドで処理し、クライアントはジョブIDを使って状態と出力の末尾を取得できます。通信はBearerトークンとTLSで保護します。
+遠隔でコマンドラインを実行する簡易ツールです。サーバーが実行ジョブを受け付けてバックグラウンドで処理し、クライアントはジョブIDを使って状態と出力の末尾を取得できます。`status LAST` を使うと、直近に登録したジョブをIDなしで確認できます。通信はBearerトークンとTLSで保護します。
 
 ## 特徴
 - コマンド・作業ディレクトリを指定してジョブを登録
@@ -48,11 +48,19 @@ go run ./cmd/client status \
   --token "my-token" \
   --insecure \
   <job-id>
+
+# 直近ジョブの状態確認
+go run ./cmd/client status \
+  --server https://localhost:8443 \
+  --token "my-token" \
+  --insecure \
+  LAST
 ```
 
 ## HTTP API
 - `POST /jobs` `{ "command": "ls", "args": ["-l"], "workdir": "/tmp" }` → `202 Accepted` `{ "job_id": "...", "status": "queued" }`
 - `GET /jobs/{id}` → `200 OK` `{ "job": { ... }, "last_lines": ["..."], "server_time": "..." }`
+- `GET /jobs/LAST` → `200 OK` 直近に登録したジョブを返却
 
 ## 実装メモ
 - サーバーはジョブを受け取るとすぐにレスポンスを返し、ゴルーチンで実行します。

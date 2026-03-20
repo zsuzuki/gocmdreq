@@ -104,7 +104,7 @@ func status(args []string) {
 	_ = fs.Parse(args)
 
 	if fs.NArg() != 1 {
-		log.Fatal("usage: status <job-id>")
+		log.Fatal("usage: status <job-id|LAST>")
 	}
 	jobID := fs.Arg(0)
 
@@ -179,5 +179,5 @@ func getenvDefault(key, fallback string) string {
 func usage() {
 	fmt.Println("usage:")
 	fmt.Println("  client submit --command <cmd> [--arg value]... [--workdir path] [--server url] [--token token] [--insecure]")
-	fmt.Println("  client status <job-id> [--server url] [--token token] [--insecure]")
+	fmt.Println("  client status <job-id|LAST> [--server url] [--token token] [--insecure]")
 }
